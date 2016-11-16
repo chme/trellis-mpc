@@ -34,6 +34,9 @@ class AppVizSpectrum:
     def __init__(self):
         self.__leds = [0] * 64
         
+        self.__number_of_ticks_idle = 0
+        self.__deactive_after_ticks_idle = int(config.VIZ_SECONDS_IDLE / config.SLEEP_TIME_BETWEEN_TICKS)
+        
         self.__window = hanning(0)
         self.__fifo = os.open(config.VIZ_FIFOPATH, os.O_RDONLY | os.O_NONBLOCK)
         
@@ -44,33 +47,41 @@ class AppVizSpectrum:
         self.__frequency_limits.append(config.VIZ_MIN_FREQUENCY)
         for i in range(1, config.VIZ_NUM_BINS + 1):
             self.__frequency_limits.append(self.__frequency_limits[-1]*2**octaves_per_channel)
-        
-        print "init viz"
-        print self.__frequency_limits
+            
+        sample_rate = 44100
+        self.__piff = []
+        for freqlim in self.__frequency_limits:
+            self.__piff.append(self.__calcPiff(freqlim, sample_rate))
         
         return
 
     def tick(self, pressedButtons=[]):
-        print "reading from fifo"
-        try:
-            data = os.read(self.__fifo, config.VIZ_CHUNK_SIZE)
-
-        except OSError as err:
-            print err.errno
-            if err.errno == errno.EAGAIN or err.errno == errno.EWOULDBLOCK:
-                return [0] * 64
+        # Deactivate viz if a button was pressed
+        if len(pressedButtons) > 0:
+            self.__number_of_ticks_idle = self.__deactive_after_ticks_idle + 1
             return [0] * 64
         
-        if len(data):
-            matrix = self.__calculateLevels(data);
-            self.__updateLEDs(matrix)
+        try:
+            data = os.read(self.__fifo, config.VIZ_CHUNK_SIZE)
+            if len(data):
+                matrix = self.__calculateLevels(data);
+                self.__updateLEDs(matrix)
+                self.__number_of_ticks_idle = 0
+            return self.__leds
         
+        except OSError:
+            self.__leds = [0] * 64
+        
+        self.__number_of_ticks_idle += 1
         return self.__leds
     
+    def deactivateNextTick(self):
+        if self.__number_of_ticks_idle > self.__deactive_after_ticks_idle:
+            self.__number_of_ticks_idle = 0
+            return True
+        return False
+
     def __updateLEDs(self, matrix):
-        # this writes out light and color information to a continuous RGB LED
-        # strip that's been wrapped around into 5 columns.
-        # numbers comes in at 9-15 ish
         for x in range(config.VIZ_NUM_BINS):
             value = (matrix[x] - 9.0) / 5
             if value < 0.1:
@@ -107,16 +118,14 @@ class AppVizSpectrum:
         # Calculate the power spectrum
         power = abs(fourier) ** 2
         
-        sample_rate = 44100
         matrix = [0 for i in range(config.VIZ_NUM_BINS)]
         for i in range(config.VIZ_NUM_BINS):
             # take the log10 of the resulting sum to approximate how human ears perceive sound levels
-            matrix[i] = log10(sum(power[self.__piff(self.__frequency_limits[i], sample_rate)
-                                              :self.__piff(self.__frequency_limits[i+1], sample_rate):1]))
+            matrix[i] = log10(sum(power[self.__piff[i] :self.__piff[i+1] :1]))
     
         return matrix
     
-    def __piff(self, val, sample_rate):
+    def __calcPiff(self, val, sample_rate):
         '''Return the power array index corresponding to a particular frequency.'''
         return int(config.VIZ_CHUNK_SIZE * val / sample_rate)
 

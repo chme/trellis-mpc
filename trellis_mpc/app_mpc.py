@@ -17,6 +17,9 @@ class AppMpc:
         self.__connected = False
         self.__retries = 0
         self.__retry_skip = 0
+        self.__skip_ticks_before_retry = int(config.MPD_SECONDS_TO_WAIT_BEFORE_RETRY / config.SLEEP_TIME_BETWEEN_TICKS)
+        self.__number_of_ticks_playing = 0
+        self.__deactive_after_ticks_playing = int(config.MPD_SECONDS_PLAYING_BEFORE_VIZ / config.SLEEP_TIME_BETWEEN_TICKS)
         
         self.__status = {}
         self.__outputs = []
@@ -91,6 +94,12 @@ class AppMpc:
         
         return
     
+    def deactivateNextTick(self):
+        if self.__number_of_ticks_playing > self.__deactive_after_ticks_playing:
+            self.__number_of_ticks_playing = 0
+            return True
+        return False
+    
     def tick(self, pressedButtons=[]):
         if not self.__connected:
             if not self.__connect():
@@ -102,6 +111,11 @@ class AppMpc:
         
         for button in pressedButtons:
             self.__processPressedButton(button)
+        
+        if len(pressedButtons) > 0:
+            self.__number_of_ticks_playing = 0
+        else:
+            self.__number_of_ticks_playing += 1
         
         return self.__leds
     
@@ -257,7 +271,7 @@ class AppMpc:
         return
 
     def __connect(self):
-        if self.__retries >= config.MPD_MAX_CONNECTION_RETRIES:
+        if self.__retries >= config.MPD_MAX_CONNECTION_RETRIES and config.MPD_MAX_CONNECTION_RETRIES > 0:
             raise AppMpcError("Maximum number of retries reached")
         
         if self.__retry_skip > 0:
@@ -269,7 +283,7 @@ class AppMpc:
             
             self.__connected = True
             self.__retries = 0
-            self.__retry_skip = config.MPD_SKIP_TICKS_BEFORE_RETRY
+            self.__retry_skip = self.__deactive_after_ticks_playing
             
             self.__status = self.__idle.status()
             self.__outputs = self.__idle.outputs()
@@ -281,7 +295,7 @@ class AppMpc:
         # Catch socket errors
         except (mpd.MPDError, IOError):
             self.__retries += 1
-            self.__retry_skip = config.MPD_SKIP_TICKS_BEFORE_RETRY
+            self.__retry_skip = self.__deactive_after_ticks_playing
         
         return False
     
