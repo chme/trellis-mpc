@@ -1,0 +1,15 @@
+[Unit]
+Description=Trellis as music player deamon client
+After=network.target forked-daapd.service
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python /opt/trellis-mpc/trellis_mpc/main.py trellis
+
+Restart=on-failure
+RestartSec=60
+StartLimitBurst=2
+StartLimitInterval=600
+
+[Install]
+WantedBy=multi-user.target
