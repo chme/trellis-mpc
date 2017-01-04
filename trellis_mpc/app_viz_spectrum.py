@@ -91,7 +91,11 @@ class AppVizSpectrum:
             
             value = int(value * 8.0)
             for y in range(config.VIZ_NUM_BINS):
-                self.__leds[x + ((7-y) * 8)] = (value > y)
+                idx = x + ((7-y) * 8)
+                if value > y:
+                    self.__leds[idx] = config.VIZ_GLOW_TICKS
+                elif self.__leds[idx] > 0:
+                    self.__leds[idx] = self.__leds[idx] - 1
         
         return
     

@@ -75,7 +75,7 @@ class BoardTrellis:
     
     def setLEDs(self, leds=[]):
         for i in range(NUM_LEDS):
-            if leds[i] == 1:
+            if leds[i] > 0:
                 self.__trellis.setLED(BOARDTRELLIS[i])
             else:
                 self.__trellis.clrLED(BOARDTRELLIS[i])

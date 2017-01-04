@@ -82,7 +82,7 @@ class BoardCurses:
         
         if selected:
             color = curses.color_pair(COLOR_SELECTED)
-        elif active:
+        elif active > 0:
             color = curses.color_pair(COLOR_ACTIVE)
         else:
             color = curses.color_pair(COLOR_INACTIVE)
