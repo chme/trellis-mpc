@@ -189,7 +189,7 @@ class AppMpc:
         return
     
     def __processPressedButton(self, button):
-        if not self.__actions.has_key(button):
+        if button not in self.__actions:
             return
         
         try:
@@ -206,7 +206,7 @@ class AppMpc:
         return
     
     def __isPlaying(self):
-        return self.__status.has_key('state') and self.__status['state'] == 'play'
+        return ('state' in self.__status) and (self.__status['state'] == 'play')
     
     def __getOutput(self, name):
         for output in self.__outputs:

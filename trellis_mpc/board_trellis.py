@@ -4,7 +4,7 @@
 #
 # Author: Christian Meffert
 
-from Adafruit_Trellis import Adafruit_Trellis
+from Adafruit_Trellis import Adafruit_Trellis, Adafruit_TrellisSet
 import time
 
 I2C_BUS = 1
@@ -39,11 +39,11 @@ BOARDTRELLIS = [\
 class BoardTrellis:
     
     def __init__(self):
-        self.__trellis = Adafruit_Trellis.Adafruit_TrellisSet(\
-                                        Adafruit_Trellis.Adafruit_Trellis(),\
-                                        Adafruit_Trellis.Adafruit_Trellis(),\
-                                        Adafruit_Trellis.Adafruit_Trellis(),\
-                                        Adafruit_Trellis.Adafruit_Trellis())
+        self.__trellis = Adafruit_TrellisSet(\
+                                        Adafruit_Trellis(),\
+                                        Adafruit_Trellis(),\
+                                        Adafruit_Trellis(),\
+                                        Adafruit_Trellis())
         
         self.__trellis.begin((0x70,  I2C_BUS), (0x71, I2C_BUS), (0x72, I2C_BUS), (0x73, I2C_BUS))
         return

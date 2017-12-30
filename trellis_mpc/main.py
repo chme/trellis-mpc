@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Licensed under the BSD license. See full license in LICENSE file.
 #
@@ -7,7 +7,7 @@
 try:
     import config
 except ImportError:
-    print "Missing config.py file, create one by copying and editing config_template.py"
+    print('Missing config.py file, create one by copying and editing config_template.py')
     raise
 
 import app_mpc
@@ -22,10 +22,10 @@ try:
 except ImportError:
     class BoardTrellis:
         def __init__(self):
-            print "Failed to load trellis module"
+            print('Failed to load trellis module')
             raise
 
-    
+
 if len(sys.argv) > 1 and sys.argv[1] == 'curses':
     board = BoardCurses()
 elif len(sys.argv) > 1 and sys.argv[1] == 'trellis':
@@ -42,11 +42,11 @@ board.initialize()
 while True:
     time.sleep(config.SLEEP_TIME_BETWEEN_TICKS)
     buttons = board.getPressedButtons()
-    
+
     if 0 in buttons or active.deactivateNextTick():
         active_idx = (active_idx + 1) % len(available)
         active = available[active_idx]
-        
+
     board.setLEDs(active.tick(buttons))
 
 
